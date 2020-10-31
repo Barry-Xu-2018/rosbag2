@@ -27,18 +27,23 @@ find_package(rcutils REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 find_package(sqlite3_vendor REQUIRED)
 find_package(SQLite3 REQUIRED)  # provided by sqlite3_vendor
+find_package(leveldb_vendor REQUIRED)
+find_package(leveldb REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   src/rosbag2_storage_default_plugins/sqlite/sqlite_wrapper.cpp
   src/rosbag2_storage_default_plugins/sqlite/sqlite_storage.cpp
-  src/rosbag2_storage_default_plugins/sqlite/sqlite_statement_wrapper.cpp)
+  src/rosbag2_storage_default_plugins/sqlite/sqlite_statement_wrapper.cpp
+  src/rosbag2_storage_default_plugins/leveldb/leveldb_wrapper.cpp
+  src/rosbag2_storage_default_plugins/leveldb/leveldb_storage.cpp)
 
 ament_target_dependencies(${PROJECT_NAME}
   rosbag2_storage
   rcpputils
   rcutils
   SQLite3
-  pluginlib)
+  pluginlib
+  leveldb)
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
