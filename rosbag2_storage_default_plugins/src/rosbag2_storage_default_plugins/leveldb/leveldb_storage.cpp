@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-
 #include <atomic>
 #include <chrono>
 #include <cstring>
@@ -128,8 +124,8 @@ inline void LeveldbStorage::scan_ldb_for_read()
   do {
     // Skip over local folder handle (`.`) and parent folder (`..`)
     if (strcmp(data.cFileName, ".") != 0 && strcmp(data.cFileName, "..") != 0) {
-      std::string path = relative_path_ + "\\" + data.cFileName;
-      if (rcutils_is_directory(file_path)) {
+      rcpputils::fs::path path(relative_path_ + "\\" + data.cFileName);
+      if (path.is_directory()) {
         std::string dir_name(data.cFileName);
         // Leveldb directory name format : ${TOPIC_NAME}_${LDB_METADATA_POSTFIX}
         if (dir_name.find(LDB_METADATA_POSTFIX) ==
@@ -156,10 +152,8 @@ inline void LeveldbStorage::scan_ldb_for_read()
   struct dirent * directory_entry;
   while ((directory_entry = readdir(dir)) != nullptr) {
     if (strcmp(directory_entry->d_name, ".") != 0 && strcmp(directory_entry->d_name, "..") != 0) {
-      struct stat stat_buffer;
-      std::string path = relative_path_ + "/" + directory_entry->d_name;
-      const auto rc = stat(path.c_str(), &stat_buffer);
-      if (rc == 0 && S_ISDIR(stat_buffer.st_mode)) {
+      rcpputils::fs::path path(relative_path_ + "/" + directory_entry->d_name);
+      if (path.is_directory()) {
         std::string dir_name(directory_entry->d_name);
         // Leveldb directory name format : ${TOPIC_NAME}_${LDB_METADATA_POSTFIX}
         if (dir_name.find(LDB_METADATA_POSTFIX) ==

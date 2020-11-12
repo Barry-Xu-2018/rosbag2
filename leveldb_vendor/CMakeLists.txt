@@ -6,6 +6,9 @@ find_package(ament_cmake REQUIRED)
 find_package(snappy_vendor REQUIRED)
 find_package(snappy REQUIRED)
 
+if (TARGET Snappy::snappy) 
+    get_target_property(snappy_INCLUDE_DIR Snappy::snappy INTERFACE_INCLUDE_DIRECTORIES)
+endif()
 string(REPLACE "include" "" snappy_install_path ${snappy_INCLUDE_DIR})
 
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
