@@ -116,7 +116,8 @@ inline void LeveldbStorage::scan_ldb_for_read()
 
 #ifdef _WIN32
   WIN32_FIND_DATA data;
-  HANDLE handle = FindFirstFile(relative_path_.c_str(), &data);
+  rcpputils::fs::path dir_path(relative_path_ + "\\*");
+  HANDLE handle = FindFirstFile(dir_path.string().c_str(), &data);
   if (INVALID_HANDLE_VALUE == handle) {
     throw std::runtime_error("Can't open directory " + relative_path_ + " !");
   }
