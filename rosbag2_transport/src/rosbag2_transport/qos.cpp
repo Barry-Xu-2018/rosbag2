@@ -16,6 +16,7 @@
 #include <vector>
 
 
+#include "rosbag2_cpp/service_utils.hpp"
 #include "rosbag2_transport/qos.hpp"
 #include "logging.hpp"
 
@@ -122,6 +123,9 @@ Rosbag2QoS Rosbag2QoS::adapt_request_to_offers(
     }
   }
 
+  bool service_event_topic =
+    rosbag2_cpp::is_service_event_topic(topic_name, endpoints[0].topic_type());
+
   // We set policies in order as defined in rmw_qos_profile_t
   Rosbag2QoS request_qos{};
   // Policy: history, depth
@@ -144,10 +148,13 @@ Rosbag2QoS Rosbag2QoS::adapt_request_to_offers(
 
   // Policy: durability
   // If all publishers offer transient_local, we can request it and receive latched messages
-  if (durability_transient_local_endpoints_count == num_endpoints) {
+  //
+  // If topic is for service event, rosbag doesn't want to receive latched messages (such as
+  // last response message). So only use durability_volatile.
+  if (!service_event_topic && durability_transient_local_endpoints_count == num_endpoints) {
     request_qos.transient_local();
   } else {
-    if (durability_transient_local_endpoints_count > 0) {
+    if (!service_event_topic && durability_transient_local_endpoints_count > 0) {
       ROSBAG2_TRANSPORT_LOG_WARN_STREAM(
         "Some, but not all, publishers on topic \"" << topic_name << "\" "
           "are offering RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL. "
