@@ -217,7 +217,7 @@ TEST_P(ComposableRecorderTests, recorder_can_parse_parameters_from_file) {
   EXPECT_EQ(record_options.rmw_serialization_format, "cdr");
   EXPECT_TRUE(record_options.topic_polling_interval == 0.01s);
   EXPECT_EQ(record_options.regex, "[xyz]/topic");
-  EXPECT_EQ(record_options.exclude_regex, "*");
+  EXPECT_EQ(record_options.exclude_regex, "(.*)");
   EXPECT_EQ(record_options.node_prefix, "prefix");
   EXPECT_EQ(record_options.compression_mode, "stream");
   EXPECT_EQ(record_options.compression_format, "h264");

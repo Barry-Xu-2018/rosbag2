@@ -183,8 +183,12 @@ RecorderImpl::RecorderImpl(
 
   for (auto & topic : record_options_.topics) {
     topic = rclcpp::expand_topic_or_service_name(
-      topic, node->get_name(),
-      node->get_namespace(), false);
+      topic, node->get_name(), node->get_namespace(), false);
+  }
+
+  for (auto & service : record_options_.services) {
+    service = rclcpp::expand_topic_or_service_name(
+      service, node->get_name(), node->get_namespace(), true);
   }
 }
 

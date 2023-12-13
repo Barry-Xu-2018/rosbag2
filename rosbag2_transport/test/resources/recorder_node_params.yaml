@@ -14,7 +14,7 @@ recorder_params_node:
         sec: 0
         nsec: 10000000
       regex: "[xyz]/topic"
-      exclude_regex: "*"
+      exclude_regex: "(.*)"
       node_prefix: "prefix"
       compression_mode: "stream"
       compression_format: "h264"
