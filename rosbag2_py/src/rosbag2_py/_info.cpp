@@ -20,6 +20,7 @@
 #include "info_sorting_method.hpp"
 #include "format_bag_metadata.hpp"
 #include "format_service_info.hpp"
+#include "rosbag2_cpp/action_utils.hpp"
 #include "rosbag2_cpp/info.hpp"
 #include "rosbag2_cpp/service_utils.hpp"
 #include "rosbag2_storage/bag_metadata.hpp"
@@ -64,7 +65,10 @@ public:
       const auto & topic_info = metadata_info.topics_with_message_count[idx];
       if (!rosbag2_cpp::is_service_event_topic(
           topic_info.topic_metadata.name,
-          topic_info.topic_metadata.type))
+          topic_info.topic_metadata.type) &&
+          ! rosbag2_cpp::is_topic_related_to_action(
+              topic_info.topic_metadata.name,
+              topic_info.topic_metadata.type))
       {
         std::cout << topic_info.topic_metadata.name << std::endl;
       }

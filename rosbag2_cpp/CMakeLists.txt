@@ -73,7 +73,8 @@ add_library(${PROJECT_NAME} SHARED
   src/rosbag2_cpp/writer.cpp
   src/rosbag2_cpp/writers/sequential_writer.cpp
   src/rosbag2_cpp/reindexer.cpp
-  src/rosbag2_cpp/service_utils.cpp)
+  src/rosbag2_cpp/service_utils.cpp
+  src/rosbag2_cpp/action_utils.cpp)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
   pluginlib::pluginlib
