@@ -118,11 +118,13 @@ std::string action_topic_type_to_action_type(const std::string & topic_type)
   return service_type;
 }
 
-TopicsInAction get_action_inteface_from_topic_type(const std::string & topic_type)
+TopicsInAction get_action_topic_type_from_topic_name(const std::string & topic_name)
 {
-  for (auto &[topic_type_enum, regex] : ActionTopicTypeRegex) {
-    std::regex pattern(regex);
-    if (std::regex_search(topic_type, pattern)) {
+  for (auto &[topic_type_enum, postfix] : ActionTopicPostfix) {
+    if (topic_name.length() > postfix.length() &&
+      topic_name.compare(
+        topic_name.length() - postfix.length(), postfix.length(), postfix) == 0)
+    {
       return topic_type_enum;
     }
   }

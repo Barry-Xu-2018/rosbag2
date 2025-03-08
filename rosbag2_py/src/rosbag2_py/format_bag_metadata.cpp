@@ -205,8 +205,6 @@ void filter_service_and_action_info(
       if (action_info_map.find(action_name) == action_info_map.end()) {
         action_info_map[action_name] = std::make_shared<rosbag2_py::ActionInformation>();
         action_info_map[action_name]->action_metadata.name = action_name;
-        action_info_map[action_name]->action_metadata.type =
-          rosbag2_cpp::action_topic_type_to_action_type(topic.topic_metadata.type);
         action_info_map[action_name]->action_metadata.serialization_format =
           topic.topic_metadata.serialization_format;
       }
@@ -218,22 +216,22 @@ void filter_service_and_action_info(
           rosbag2_cpp::action_topic_type_to_action_type(topic.topic_metadata.type);
       }
 
-      switch (rosbag2_cpp::get_action_inteface_from_topic_type(topic.topic_metadata.type))
+      switch (rosbag2_cpp::get_action_topic_type_from_topic_name(topic.topic_metadata.name))
       {
         case rosbag2_cpp::TopicsInAction::SendGoalEvent:
-          action_info_map[action_name]->send_goal_event_message_count += topic.message_count;
+          action_info_map[action_name]->send_goal_event_message_count = topic.message_count;
           break;
         case rosbag2_cpp::TopicsInAction::CancelGoalEvent:
-          action_info_map[action_name]->cancel_goal_event_message_count += topic.message_count;
+          action_info_map[action_name]->cancel_goal_event_message_count = topic.message_count;
           break;
         case rosbag2_cpp::TopicsInAction::GetResultEvent:
-          action_info_map[action_name]->goal_response_event_message_count += topic.message_count;
+          action_info_map[action_name]->get_result_event_message_count = topic.message_count;
           break;
         case rosbag2_cpp::TopicsInAction::Feedback:
-          action_info_map[action_name]->feedback_message_count += topic.message_count;
+          action_info_map[action_name]->feedback_message_count = topic.message_count;
           break;
         case rosbag2_cpp::TopicsInAction::Status:
-          action_info_map[action_name]->status_message_count += topic.message_count;
+          action_info_map[action_name]->status_message_count = topic.message_count;
           break;
         default:  // Never go here
           break;
@@ -328,9 +326,9 @@ void format_action_with_type(
       info_stream << "Serialization Format: " << ai->action_metadata.serialization_format << "\n";
       info_stream << "    Topic: feedback | Count: " << ai->feedback_message_count << "\n";
       info_stream << "    Topic: status | Count: " << ai->status_message_count << "\n";
-      info_stream << "    Service: send_goal | Event Count: " << ai->goal_response_event_message_count << "\n";
+      info_stream << "    Service: send_goal | Event Count: " << ai->get_result_event_message_count << "\n";
       info_stream << "    Service: cancel_goal | Event Count: " << ai->cancel_goal_event_message_count << "\n";
-      info_stream << "    Service: get_result | Event Count: " << ai->goal_response_event_message_count;
+      info_stream << "    Service: get_result | Event Count: " << ai->get_result_event_message_count;
       info_stream << std::endl;
     };
 

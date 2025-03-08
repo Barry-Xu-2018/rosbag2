@@ -41,13 +41,14 @@ std::string
 action_topic_name_to_action_name(const std::string & topic_name);
 
 // Call this function after is_topic_related_to_action() return true
+// Note that cancel_goal event topic and status topic return ""
 ROSBAG2_CPP_PUBLIC
 std::string
 action_topic_type_to_action_type(const std::string & topic_type);
 
 ROSBAG2_CPP_PUBLIC
 TopicsInAction
-get_action_inteface_from_topic_type(const std::string & topic_type);
+get_action_topic_type_from_topic_name(const std::string & topic_name);
 }  // namespace rosbag2_cpp
 
 #endif  // ROSBAG2_CPP__ACTION_UTILS_HPP_

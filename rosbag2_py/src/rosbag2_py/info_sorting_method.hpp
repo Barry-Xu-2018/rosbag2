@@ -62,6 +62,10 @@ std::vector<size_t> generate_sorted_idx(
   InfoSortingMethod sort_method = InfoSortingMethod::NAME);
 
 std::vector<size_t> generate_sorted_idx(
+    const std::vector<std::shared_ptr<rosbag2_cpp::rosbag2_action_info_t>> & actions,
+    const InfoSortingMethod sort_method);
+
+std::vector<size_t> generate_sorted_idx(
   const std::vector<std::shared_ptr<ActionInformation>> & services,
   InfoSortingMethod sort_method = InfoSortingMethod::NAME);
 }  // namespace rosbag2_py
