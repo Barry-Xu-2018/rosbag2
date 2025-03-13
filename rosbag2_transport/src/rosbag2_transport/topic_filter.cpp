@@ -253,7 +253,7 @@ bool TopicFilter::take_topic(
         }
       }
     }
-  
+
     if (topic_in_list(topic_name, record_options_.exclude_actions)) {
       return false;
     }

@@ -67,7 +67,7 @@ public:
       if (!rosbag2_cpp::is_service_event_topic(
           topic_info.topic_metadata.name,
           topic_info.topic_metadata.type) &&
-          ! rosbag2_cpp::is_topic_related_to_action(
+        !rosbag2_cpp::is_topic_related_to_action(
               topic_info.topic_metadata.name,
               topic_info.topic_metadata.type))
       {
@@ -116,24 +116,24 @@ public:
           switch (action_interface_type) {
             case rosbag2_cpp::TopicsInAction::Feedback:
             case rosbag2_cpp::TopicsInAction::Status:
-            {
-              auto action_info_iter = std::find_if(all_actions_info.begin(),
-                all_actions_info.end(),
-                [topic_name = topic_metadata.name](const auto & action_info){
-                  return action_info->name ==
-                    rosbag2_cpp::action_topic_name_to_action_name(topic_name);
-                });
-              if (action_info_iter == all_actions_info.end()) {
+              {
+                auto action_info_iter = std::find_if(all_actions_info.begin(),
+                  all_actions_info.end(),
+                    [topic_name = topic_metadata.name](const auto & action_info){
+                      return action_info->name ==
+                             rosbag2_cpp::action_topic_name_to_action_name(topic_name);
+                  });
+                if (action_info_iter == all_actions_info.end()) {
+                  break;
+                }
+
+                if (action_interface_type == rosbag2_cpp::TopicsInAction::Feedback) {
+                  (*action_info_iter)->feedback_topic_msg_count = message_count;
+                } else {
+                  (*action_info_iter)->status_topic_msg_count = message_count;
+                }
                 break;
               }
-
-              if (action_interface_type == rosbag2_cpp::TopicsInAction::Feedback) {
-                (*action_info_iter)->feedback_topic_msg_count = message_count;
-              } else {
-                (*action_info_iter)->status_topic_msg_count = message_count;
-              }
-              break;
-            }
             default:
               break;
           }

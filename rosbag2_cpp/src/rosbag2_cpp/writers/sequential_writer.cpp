@@ -234,8 +234,8 @@ void SequentialWriter::create_topic(const rosbag2_storage::TopicMetadata & topic
     definition = rosbag2_storage::MessageDefinition::empty_message_definition_for(topic_type);
   } else {
     if (is_service_event_topic(topic_with_type.name, topic_with_type.type)) {
-    // change service event type to service type for next step to get message definition
-    topic_type = service_event_topic_type_to_service_type(topic_with_type.type);
+      // change service event type to service type for next step to get message definition
+      topic_type = service_event_topic_type_to_service_type(topic_with_type.type);
     } else {
       topic_type = topic_with_type.type;
     }

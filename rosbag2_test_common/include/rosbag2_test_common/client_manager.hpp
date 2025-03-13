@@ -39,7 +39,7 @@ public:
   : Node("service_client_manager_" + std::to_string(rclcpp::Clock().now().nanoseconds()),
       rclcpp::NodeOptions().start_parameter_services(false).start_parameter_event_publisher(
         false).enable_rosout(false)),
-    service_name_(std::move(service_name)),
+    action_name_(std::move(service_name)),
     number_of_clients_(number_of_clients),
     enable_service_event_contents_(service_event_contents),
     enable_client_event_contents_(client_event_contents)
@@ -57,7 +57,7 @@ public:
       };
     // *INDENT-ON*
 
-    service_ = create_service<ServiceT>(service_name_, do_nothing_srv_callback);
+    service_ = create_service<ServiceT>(action_name_, do_nothing_srv_callback);
 
     rcl_service_introspection_state_t introspection_state;
     if (enable_service_event_contents_) {
@@ -75,7 +75,7 @@ public:
     }
 
     for (size_t i = 0; i < number_of_clients_; i++) {
-      auto client = create_client<ServiceT>(service_name_);
+      auto client = create_client<ServiceT>(action_name_);
       client->configure_introspection(
         get_clock(), rclcpp::SystemDefaultsQoS(), introspection_state);
       clients_.emplace_back(client);
@@ -128,7 +128,7 @@ private:
   rclcpp::executors::SingleThreadedExecutor exec_;
   typename rclcpp::Service<ServiceT>::SharedPtr service_;
   std::vector<client_shared_ptr> clients_;
-  const std::string service_name_;
+  const std::string action_name_;
   size_t number_of_clients_;
   bool enable_service_event_contents_;
   bool enable_client_event_contents_;

@@ -138,7 +138,7 @@ void Info::read_service_action_info(
     }
   }
 
-  if (!all_service_info.empty() or !all_action_info.empty()) {
+  if (!all_service_info.empty() || !all_action_info.empty()) {
     auto msg = service_msgs::msg::ServiceEventInfo();
     const rosidl_message_type_support_t * type_support_info =
       rosidl_typesupport_cpp::
@@ -154,7 +154,11 @@ void Info::read_service_action_info(
         if (one_service_info == all_service_info.end()) {
           continue;  // Skip the regular topics
         }
-      } if (action_topic_type == TopicsInAction::Feedback || action_topic_type == TopicsInAction::Status) {
+      }
+
+      if (action_topic_type == TopicsInAction::Feedback ||
+        action_topic_type == TopicsInAction::Status)
+      {
         continue;  // Skip the feedback and status topic for action
       }
 
@@ -174,36 +178,36 @@ void Info::read_service_action_info(
         switch (msg.event_type) {
           case service_msgs::msg::ServiceEventInfo::REQUEST_SENT:
           case service_msgs::msg::ServiceEventInfo::REQUEST_RECEIVED:
-          {
-            if (action_topic_type == TopicsInAction::SendGoalEvent) {
-              action_process_info[action_name]->send_goal_service.request[msg.client_gid].emplace(
-                msg.sequence_number);
-            } else if (action_topic_type == TopicsInAction::GetResultEvent) {
-              action_process_info[action_name]->get_result_service.request[msg.client_gid].emplace(
-                msg.sequence_number);
-            } else {
-              // TopicsInAction::CancelGoalEvent
-              action_process_info[action_name]->cancel_goal_service.request[msg.client_gid].emplace(
-                msg.sequence_number);
+            {
+              if (action_topic_type == TopicsInAction::SendGoalEvent) {
+                action_process_info[action_name]->
+                send_goal_service.request[msg.client_gid].emplace(msg.sequence_number);
+              } else if (action_topic_type == TopicsInAction::GetResultEvent) {
+                action_process_info[action_name]->
+                get_result_service.request[msg.client_gid].emplace(msg.sequence_number);
+              } else {
+                // TopicsInAction::CancelGoalEvent
+                action_process_info[action_name]->
+                cancel_goal_service.request[msg.client_gid].emplace(msg.sequence_number);
+              }
+              break;
             }
-            break;
-          }
           case service_msgs::msg::ServiceEventInfo::RESPONSE_SENT:
           case service_msgs::msg::ServiceEventInfo::RESPONSE_RECEIVED:
-          {
-            if (action_topic_type == TopicsInAction::SendGoalEvent) {
-              action_process_info[action_name]->send_goal_service.response[msg.client_gid].emplace(
-                msg.sequence_number);
-            } else if (action_topic_type == TopicsInAction::GetResultEvent) {
-              action_process_info[action_name]->get_result_service.response[msg.client_gid].emplace(
-                msg.sequence_number);
-            } else {
-              // TopicsInAction::CancelGoalEvent
-              action_process_info[action_name]->cancel_goal_service.response[msg.client_gid].emplace(
-                msg.sequence_number);
+            {
+              if (action_topic_type == TopicsInAction::SendGoalEvent) {
+                action_process_info[action_name]->
+                send_goal_service.response[msg.client_gid].emplace(msg.sequence_number);
+              } else if (action_topic_type == TopicsInAction::GetResultEvent) {
+                action_process_info[action_name]->
+                get_result_service.response[msg.client_gid].emplace(msg.sequence_number);
+              } else {
+                // TopicsInAction::CancelGoalEvent
+                action_process_info[action_name]->
+                cancel_goal_service.response[msg.client_gid].emplace(msg.sequence_number);
+              }
+              break;
             }
-            break;
-          }
         }
       } else {
         // Handle service event topic
@@ -293,7 +297,6 @@ void Info::read_service_action_info(
     for (auto & [topic_name, service_info] : all_service_info) {
       output_service_info.emplace_back(std::move(service_info));
     }
-
   }
 
   return;

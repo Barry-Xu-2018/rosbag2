@@ -16,6 +16,7 @@
 #define ROSBAG2_CPP__ACTION_UTILS_HPP_
 
 #include <string>
+#include <vector>
 
 #include "rosbag2_cpp/visibility_control.hpp"
 
@@ -49,6 +50,10 @@ action_topic_type_to_action_type(const std::string & topic_type);
 ROSBAG2_CPP_PUBLIC
 TopicsInAction
 get_action_topic_type_from_topic_name(const std::string & topic_name);
+
+ROSBAG2_CPP_PUBLIC
+std::vector<std::string>
+action_name_to_action_topic_name(const std::string & action_name);
 }  // namespace rosbag2_cpp
 
 #endif  // ROSBAG2_CPP__ACTION_UTILS_HPP_

@@ -323,7 +323,7 @@ def convert_service_to_service_event_topic(services):
     return services_event_topics
 
 
-def covert_action_to_all_related_topics(actions):
+def convert_action_to_all_related_topics(actions):
     action_topics = []
 
     if not actions:

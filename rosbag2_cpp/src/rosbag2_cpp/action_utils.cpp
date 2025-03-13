@@ -32,9 +32,9 @@ const std::unordered_map<TopicsInAction, std::string> ActionTopicPostfix = {
 
 // The regex pattern of the action internal topics and service event topics
 const std::unordered_map<TopicsInAction, std::string> ActionTopicTypeRegex = {
-  {TopicsInAction::SendGoalEvent, ".+/action/.+_Event$"},
+  {TopicsInAction::SendGoalEvent, ".+/action/.+SendGoal_Event$"},
   {TopicsInAction::CancelGoalEvent, "^action_msgs/srv/CancelGoal_Event$"},
-  {TopicsInAction::GetResultEvent, ".+/action/.+_Event$"},
+  {TopicsInAction::GetResultEvent, ".+/action/.+GetResult_Event$"},
   {TopicsInAction::Feedback, ".+/action/.+_FeedbackMessage$"},
   {TopicsInAction::Status, "^action_msgs/msg/GoalStatusArray$"}
 };
@@ -48,13 +48,13 @@ bool is_topic_related_to_action(const std::string & topic_name, const std::strin
     return false;
   } else {
     for (auto &[topic_type_enum, postfix] : ActionTopicPostfix) {
-        if (topic_name.length() > postfix.length() &&
-          topic_name.compare(
-            topic_name.length() - postfix.length(), postfix.length(), postfix) == 0)
-        {
-          topic = topic_type_enum;
-          break;
-        }
+      if (topic_name.length() > postfix.length() &&
+        topic_name.compare(
+          topic_name.length() - postfix.length(), postfix.length(), postfix) == 0)
+      {
+        topic = topic_type_enum;
+        break;
+      }
     }
   }
 
@@ -96,22 +96,25 @@ std::string action_topic_type_to_action_type(const std::string & topic_type)
       switch (topic_type_enum) {
         case TopicsInAction::SendGoalEvent:
           // Remove the postfix "_SendGoal_Event"
-          service_type = topic_type.substr(0, topic_type.length() - std::strlen("_SendGoal_Event"));
+          service_type =
+            topic_type.substr(0, topic_type.length() - std::strlen("_SendGoal_Event"));
           break;
         case TopicsInAction::GetResultEvent:
           // Remove the postfix "_GetResult_Event"
-          service_type = topic_type.substr(0, topic_type.length() - std::strlen("_GetResult_Event"));
+          service_type =
+            topic_type.substr(0, topic_type.length() - std::strlen("_GetResult_Event"));
           break;
         case TopicsInAction::Feedback:
           // Remove the postfix "_FeedbackMessage"
-          service_type = topic_type.substr(0, topic_type.length() - std::strlen("_FeedbackMessage"));
+          service_type =
+            topic_type.substr(0, topic_type.length() - std::strlen("_FeedbackMessage"));
           break;
         case TopicsInAction::CancelGoalEvent:
         case TopicsInAction::Status:
         default:
           break;
-      break;
       }
+      return service_type;
     }
   }
 
@@ -132,4 +135,18 @@ TopicsInAction get_action_topic_type_from_topic_name(const std::string & topic_n
   return TopicsInAction::Unknown;
 }
 
+std::vector<std::string> action_name_to_action_topic_name(const std::string & action_name)
+{
+  std::vector<std::string> action_topics;
+
+  if (action_name.empty()) {
+    return action_topics;
+  }
+
+  for (auto &[topic_type_enum, postfix] : ActionTopicPostfix) {
+    action_topics.push_back(action_name + postfix);
+  }
+
+  return action_topics;
+}
 }  // namespace rosbag2_cpp

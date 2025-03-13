@@ -18,7 +18,7 @@ import os
 
 from rclpy.qos import InvalidQoSProfileException
 from ros2bag.api import add_writer_storage_plugin_extensions
-from ros2bag.api import covert_action_to_all_related_topics
+from ros2bag.api import convert_action_to_all_related_topics
 from ros2bag.api import convert_service_to_service_event_topic
 from ros2bag.api import convert_yaml_to_qos_profile
 from ros2bag.api import print_error
@@ -360,7 +360,7 @@ class RecordVerb(VerbExtension):
         # Convert service name to service event topic name
         record_options.services = convert_service_to_service_event_topic(args.services)
         # Covert action name to internal topic name and internal service event topic name
-        record_options.actions = covert_action_to_all_related_topics(args.actions)
+        record_options.actions = convert_action_to_all_related_topics(args.actions)
 
         record_options.exclude_topic_types = args.exclude_topic_types
         record_options.rmw_serialization_format = args.serialization_format
@@ -371,7 +371,7 @@ class RecordVerb(VerbExtension):
         record_options.exclude_topics = args.exclude_topics if args.exclude_topics else []
         record_options.exclude_service_events = \
             convert_service_to_service_event_topic(args.exclude_services)
-        record_options.exclude_actions = covert_action_to_all_related_topics(args.exclude_actions)
+        record_options.exclude_actions = convert_action_to_all_related_topics(args.exclude_actions)
         record_options.node_prefix = NODE_NAME_PREFIX
         record_options.compression_mode = args.compression_mode
         record_options.compression_format = args.compression_format

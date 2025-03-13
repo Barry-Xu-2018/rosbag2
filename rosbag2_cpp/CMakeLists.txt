@@ -304,6 +304,16 @@ if(BUILD_TESTING)
       ${test_msgs_TARGETS}
     )
   endif()
+
+  ament_add_gmock(test_action_utils
+    test/rosbag2_cpp/test_action_utils.cpp)
+  if(TARGET test_action_utils)
+    target_link_libraries(test_action_utils
+      ${PROJECT_NAME}
+      rosbag2_test_common::rosbag2_test_common
+      ${test_msgs_TARGETS}
+    )
+  endif()
 endif()
 
 ament_package()

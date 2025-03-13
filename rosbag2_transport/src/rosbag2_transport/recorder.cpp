@@ -560,7 +560,6 @@ void RecorderImpl::subscribe_topic(const rosbag2_storage::TopicMetadata & topic)
 
   rosbag2_storage::Rosbag2QoS subscription_qos{subscription_qos_for_topic(topic.name)};
 
-  printf("+++ Subscribing to topic '%s' with QoS profile:\n", topic.name.c_str());
   auto subscription = create_subscription(topic.name, topic.type, subscription_qos);
   if (subscription) {
     subscriptions_.insert({topic.name, subscription});

@@ -27,8 +27,7 @@ format_action_info(
 {
   std::stringstream info_stream;
   const std::string action_info_string = "Action information: ";
-  auto indentation_spaces = action_info_string.size();
-  info_stream << "Action:           " << action_info_list.size() << std::endl;
+  info_stream << "Actions:           " << action_info_list.size() << std::endl;
   info_stream << action_info_string;
 
   if (action_info_list.empty()) {
@@ -37,20 +36,25 @@ format_action_info(
 
   auto print_action_info =
     [&info_stream](const std::shared_ptr<rosbag2_cpp::rosbag2_action_info_t> & ai) -> void {
+      info_stream << std::endl;
       info_stream << "  Action: " << ai->name << " | ";
       info_stream << "Type: " << ai->type << " | ";
       info_stream << "Topics: 2" << " | ";
       info_stream << "Service: 3" << " | ";
-      info_stream << "Serialization Format: " << ai->serialization_format << "\n";
-      info_stream << "    Topic: feedback | Count: " << ai->feedback_topic_msg_count << "\n";
-      info_stream << "    Topic: status | Count: " << ai->status_topic_msg_count << "\n";
-      info_stream << "    Service: send_goal | Request Count: " << ai->send_goal_service_msg_count.first
-        << " | Response Count: " << ai->send_goal_service_msg_count.second << "\n";
-      info_stream << "    Service: cancel_goal | Request Count: " << ai->cancel_goal_service_msg_count.first
-        << " | Response Count: " << ai->cancel_goal_service_msg_count.second << "\n";
-      info_stream << "    Service: get_result | Request Count: " << ai->get_result_service_msg_count.first
-        << " | Response Count: " << ai->get_result_service_msg_count.second << "\n";
-      info_stream << std::endl;
+      info_stream << "Serialization Format: " << ai->serialization_format << std::endl;
+      info_stream << "    Topic: feedback | Count: " << ai->feedback_topic_msg_count << std::endl;
+      info_stream << "    Topic: status | Count: " << ai->status_topic_msg_count << std::endl;
+      info_stream << "    Service: send_goal | Request Count: "
+                  << ai->send_goal_service_msg_count.first
+                  << " | Response Count: "
+                  << ai->send_goal_service_msg_count.second << std::endl;
+      info_stream << "    Service: cancel_goal | Request Count: "
+                  << ai->cancel_goal_service_msg_count.first
+                  << " | Response Count: "
+                  << ai->cancel_goal_service_msg_count.second << std::endl;
+      info_stream << "    Service: get_result | Request Count: "
+                  << ai->get_result_service_msg_count.first
+                  << " | Response Count: " << ai->get_result_service_msg_count.second;
     };
 
   std::vector<size_t> sorted_idx = generate_sorted_idx(action_info_list, sort_method);
@@ -58,7 +62,6 @@ format_action_info(
   print_action_info(action_info_list[sorted_idx[0]]);
   auto number_of_services = action_info_list.size();
   for (size_t j = 1; j < number_of_services; ++j) {
-    info_stream << std::string(indentation_spaces, ' ');
     print_action_info(action_info_list[sorted_idx[j]]);
   }
 

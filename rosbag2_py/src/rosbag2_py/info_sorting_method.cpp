@@ -146,15 +146,15 @@ std::vector<size_t> generate_sorted_idx(
           break;
         case InfoSortingMethod::COUNT:
           size_t total_count_action1 = actions[i1]->send_goal_event_message_count +
-            actions[i1]->cancel_goal_event_message_count +
-            actions[i1]->get_result_event_message_count +
-            actions[i1]->feedback_message_count +
-            actions[i1]->status_message_count;
+          actions[i1]->cancel_goal_event_message_count +
+          actions[i1]->get_result_event_message_count +
+          actions[i1]->feedback_message_count +
+          actions[i1]->status_message_count;
           size_t total_count_action2 = actions[i2]->send_goal_event_message_count +
-            actions[i2]->cancel_goal_event_message_count +
-            actions[i2]->get_result_event_message_count +
-            actions[i2]->feedback_message_count +
-            actions[i2]->status_message_count;
+          actions[i2]->cancel_goal_event_message_count +
+          actions[i2]->get_result_event_message_count +
+          actions[i2]->feedback_message_count +
+          actions[i2]->status_message_count;
           is_greater = total_count_action1 < total_count_action2;
           break;
       }
@@ -183,17 +183,23 @@ std::vector<size_t> generate_sorted_idx(
           is_greater = actions[i1]->type < actions[i2]->type;
           break;
         case InfoSortingMethod::COUNT:
-          size_t total_count_action1 = 
-            actions[i1]->send_goal_service_msg_count.first + actions[i1]->send_goal_service_msg_count.second +
-            actions[i1]->cancel_goal_service_msg_count.first + actions[i1]->cancel_goal_service_msg_count.second +
-            actions[i1]->get_result_service_msg_count.first + actions[i1]->get_result_service_msg_count.second +
-            actions[i1]->feedback_topic_msg_count + actions[i1]->status_topic_msg_count;
+          size_t total_count_action1 =
+          actions[i1]->send_goal_service_msg_count.first +
+          actions[i1]->send_goal_service_msg_count.second +
+          actions[i1]->cancel_goal_service_msg_count.first +
+          actions[i1]->cancel_goal_service_msg_count.second +
+          actions[i1]->get_result_service_msg_count.first +
+          actions[i1]->get_result_service_msg_count.second +
+          actions[i1]->feedback_topic_msg_count + actions[i1]->status_topic_msg_count;
 
           size_t total_count_action2 =
-            actions[i2]->send_goal_service_msg_count.first + actions[i2]->send_goal_service_msg_count.second +
-            actions[i2]->cancel_goal_service_msg_count.first + actions[i2]->cancel_goal_service_msg_count.second +
-            actions[i2]->get_result_service_msg_count.first + actions[i2]->get_result_service_msg_count.second +
-            actions[i2]->feedback_topic_msg_count + actions[i2]->status_topic_msg_count;
+          actions[i2]->send_goal_service_msg_count.first +
+          actions[i2]->send_goal_service_msg_count.second +
+          actions[i2]->cancel_goal_service_msg_count.first +
+          actions[i2]->cancel_goal_service_msg_count.second +
+          actions[i2]->get_result_service_msg_count.first +
+          actions[i2]->get_result_service_msg_count.second +
+          actions[i2]->feedback_topic_msg_count + actions[i2]->status_topic_msg_count;
           is_greater = total_count_action1 < total_count_action2;
           break;
       }
