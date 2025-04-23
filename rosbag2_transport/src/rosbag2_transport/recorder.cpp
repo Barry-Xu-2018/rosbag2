@@ -32,6 +32,7 @@
 
 #include "rmw/types.h"
 
+#include "rosbag2_cpp/action_utils.hpp"
 #include "rosbag2_cpp/bag_events.hpp"
 #include "rosbag2_cpp/writer.hpp"
 #include "rosbag2_cpp/service_utils.hpp"
@@ -537,6 +538,33 @@ RecorderImpl::get_missing_topics(const std::unordered_map<std::string, std::stri
 void RecorderImpl::subscribe_topics(
   const std::unordered_map<std::string, std::string> & topics_and_types)
 {
+  // Generate actual types for all topics
+  // For normal topic, actual type is topic type.
+  // For event topic for service, actual type is service type.
+  // For topic related to action, actual type is action type.
+  std::unordered_map<std::string, std::shared_ptr<std::string>> topic_and_actual_type_map;
+  std::unordered_map<std::string, std::shared_ptr<std::string>> action_and_type_map;
+  for (const auto & [topic_name, topic_type] : topics_and_types) {
+    if (rosbag2_cpp::is_topic_belong_to_action(topic_name, topic_type)) {
+      auto action_name =
+        rosbag2_cpp::action_interface_name_to_action_name(topic_name);
+      if (action_and_type_map.count(action_name) == 0) {
+        action_and_type_map[action_name] = std::make_shared<std::string>();
+      }
+
+      // Not that status and cancel goal topic cannot get action type from topic type
+      if (action_and_type_map[action_name]->empty()) {
+        *action_and_type_map[action_name] = rosbag2_cpp::get_action_type_for_info(topic_type);
+      }
+      topic_and_actual_type_map[topic_name] = action_and_type_map[action_name];
+    } else if (rosbag2_cpp::is_service_event_topic(topic_name, topic_type)) {
+      topic_and_actual_type_map[topic_name] = std::make_shared<std::string>(
+        rosbag2_cpp::service_event_topic_type_to_service_type(topic_type));
+    } else {
+      topic_and_actual_type_map[topic_name] = std::make_shared<std::string>(topic_type);
+    }
+  }
+
   for (const auto & topic_with_type : topics_and_types) {
     auto endpoint_infos = node->get_publishers_info_by_topic(topic_with_type.first);
     subscribe_topic(
@@ -547,6 +575,7 @@ void RecorderImpl::subscribe_topics(
         serialization_format_,
         offered_qos_profiles_for_topic(endpoint_infos),
         type_description_hash_for_topic(endpoint_infos),
+        *topic_and_actual_type_map[topic_with_type.first]
       });
   }
 }

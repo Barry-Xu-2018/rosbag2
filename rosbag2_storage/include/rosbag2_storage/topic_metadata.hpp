@@ -31,6 +31,10 @@ struct TopicMetadata
   std::vector<rclcpp::QoS> offered_qos_profiles;
   // REP-2011 type description hash if available for topic, "" otherwise.
   std::string type_description_hash;
+  // For normal topic, actual type is topic type.
+  // For event topic for service, actual type is service type.
+  // For topic related to action, actual type is action type.
+  std::string actual_type;
 
   bool operator==(const rosbag2_storage::TopicMetadata & rhs) const
   {

@@ -320,6 +320,7 @@ rosbag2_storage::MessageDefinition LocalMessageDefinitionSource::get_full_text(
       break;
     case Format::MSG:
     case Format::SRV:
+    case Format::ACTION:
       out.encoding = "ros2msg";
       break;
     case Format::IDL:
