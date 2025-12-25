@@ -556,6 +556,14 @@ if(BUILD_TESTING)
     rosbag2_test_common::rosbag2_test_common
     rcutils::rcutils
   )
+
+  ament_add_gmock(test_mytest test/rosbag2_transport/test_mytest.cpp)
+  target_link_libraries(test_mytest
+    ${PROJECT_NAME}
+    ${test_msgs_TARGETS}
+    ${rosgraph_msgs_TARGETS}
+    rosbag2_test_common::rosbag2_test_common
+  )
 endif()
 
 ament_package()
