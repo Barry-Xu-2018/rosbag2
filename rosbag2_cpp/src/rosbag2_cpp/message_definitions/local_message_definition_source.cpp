@@ -252,6 +252,14 @@ LocalMessageDefinitionSource::MessageSpec::MessageSpec(
 {
 }
 
+LocalMessageDefinitionSource::MessageSpec::MessageSpec(
+  Format format, std::string text, const std::set<std::string> & dependencies)
+: dependencies(dependencies),
+  text(std::move(text)),
+  format(format)
+{
+}
+
 const LocalMessageDefinitionSource::MessageSpec & LocalMessageDefinitionSource::load_message_spec(
   const DefinitionIdentifier & definition_identifier)
 {
@@ -405,11 +413,137 @@ rosbag2_storage::MessageDefinition LocalMessageDefinitionSource::get_full_text_e
     // Therefore, will try to search dependencies in MSG files first then in IDL files
     // via two separate recursive searches for each dependency.
     if (is_service_type) {
-      format = Format::SRV;
       if (!topic_name.empty() && is_service_event_topic(topic_name, root_type)) {
         // Convert service event type to service type
         real_root_type = service_event_topic_type_to_service_type(root_type);
+
+        // Generate a proper service event message definition.
+        // The runtime message is a ServiceEvent wrapper containing:
+        //   service_msgs/msg/ServiceEventInfo info
+        //   <pkg>/srv/<Name>_Request[<=1] request
+        //   <pkg>/srv/<Name>_Response[<=1] response
+
+        // Load the .srv file to get the raw request/response field definitions
+        DefinitionIdentifier srv_identifier{real_root_type, Format::SRV};
+        const MessageSpec & srv_spec = load_message_spec(srv_identifier);
+        const std::string & srv_text = srv_spec.text;
+
+        // Split .srv content on "---" separator into request and response fields
+        std::string request_fields;
+        std::string response_fields;
+        auto separator_pos = srv_text.find("---");
+        if (separator_pos != std::string::npos) {
+          request_fields = srv_text.substr(0, separator_pos);
+          auto after_sep = srv_text.find_first_not_of("-", separator_pos);
+          if (after_sep != std::string::npos && srv_text[after_sep] == '\n') {
+            after_sep++;
+          }
+          if (after_sep != std::string::npos) {
+            response_fields = srv_text.substr(after_sep);
+          }
+        } else {
+          request_fields = srv_text;
+        }
+
+        auto rtrim = [](std::string & s) {
+            auto pos = s.find_last_not_of(" \n\r");
+            s.erase(pos == std::string::npos ? 0 : pos + 1);
+        };
+        rtrim(request_fields);
+        rtrim(response_fields);
+
+        std::string request_type = real_root_type + "_Request";
+        std::string response_type = real_root_type + "_Response";
+
+        // Extract the package name from real_root_type
+        std::smatch srv_match;
+        std::string srv_package;
+        if (std::regex_match(root_type, srv_match, PACKAGE_TYPENAME_REGEX)) {
+          srv_package = srv_match[1];
+        }
+
+        // Inject synthetic _Request and _Response specs into the cache so
+        // append_recursive can resolve them and their transitive dependencies.
+        // For msg
+        MessageSpec request_msg_spec(Format::MSG, request_fields + "\n", srv_package, "msg");
+        msg_specs_by_definition_identifier_.emplace(
+          DefinitionIdentifier(request_type, Format::MSG),
+          request_msg_spec);
+        MessageSpec response_msg_spec(Format::MSG, response_fields + "\n", srv_package, "msg");
+        msg_specs_by_definition_identifier_.emplace(
+          DefinitionIdentifier(response_type, Format::MSG),
+          response_msg_spec);
+        // For idl
+        MessageSpec request_idl_spec(Format::IDL, request_fields + "\n",
+          request_msg_spec.dependencies);
+        msg_specs_by_definition_identifier_.emplace(
+          DefinitionIdentifier(request_type, Format::IDL),
+          request_idl_spec);
+        MessageSpec response_idl_spec(Format::IDL, response_fields + "\n",
+          response_msg_spec.dependencies);
+        msg_specs_by_definition_identifier_.emplace(
+          DefinitionIdentifier(response_type, Format::IDL),
+          response_idl_spec);
+
+        // Build the root event message text
+        std::string event_text =
+          "service_msgs/msg/ServiceEventInfo info\n" +
+          request_type + "[<=1] request\n" +
+          response_type + "[<=1] response\n";
+        // Parse the root event message to discover its dependencies
+        auto root_deps = parse_msg_dependencies(event_text, "");
+
+        // Build the full definition: root text first, then all dependencies.
+        result = event_text;
+        for (const auto & dep_name : root_deps) {
+          printf("dep_name: %s\n", dep_name.c_str());
+          DefinitionIdentifier dep(dep_name, Format::MSG);
+          bool inserted = seen_deps.insert(dep).second;
+          if (inserted) {
+            try {
+              if (dep_name != "service_msgs/msg/ServiceEventInfo") {
+                format = Format::MSG;
+              }
+              auto rtn_result = append_recursive(dep, max_recursion_depth);
+              result += "\n" + delimiter(dep) + rtn_result;
+            } catch (const DefinitionNotFoundError & msg_search_err) {
+              ROSBAG2_CPP_LOG_DEBUG("No .msg definition for %s, falling back to IDL",
+                                    msg_search_err.what());
+              printf("No .msg definition for %s, falling back to IDL\n", msg_search_err.what());
+              format = Format::IDL;
+              try {
+                DefinitionIdentifier dep(dep_name, Format::IDL);
+                for (auto it = seen_deps.begin(); it != seen_deps.end();) {
+                  if (msg_specs_by_definition_identifier_.find(*it) == msg_specs_by_definition_identifier_.end()) {
+                    it = seen_deps.erase(it);
+                  } else {
+                    ++it;
+                  }
+                }
+                inserted = seen_deps.insert(dep).second;
+                if (inserted) {
+                  result += "\n";
+                  result += delimiter(dep);
+                  result += append_recursive(dep, max_recursion_depth);
+                }
+              } catch (const DefinitionNotFoundError & idl_search_error) {
+              ROSBAG2_CPP_LOG_DEBUG("No .idl definition found for topic type %s.",
+                                    idl_search_error.what());
+              format = Format::UNKNOWN;
+              } catch (const TypenameNotUnderstoodError & err) {
+                ROSBAG2_CPP_LOG_DEBUG(
+                  "Message type name '%s' not understood by type definition search.", err.what());
+                format = Format::UNKNOWN;
+              }
+            } catch (const TypenameNotUnderstoodError & err) {
+              ROSBAG2_CPP_LOG_DEBUG(
+                "Message type name '%s' not understood by type definition search.", err.what());
+              format = Format::UNKNOWN;
+            }
+          }
+        }
       }
+      goto end;
     } else if (is_action_type) {
       format = Format::ACTION;
       if (!topic_name.empty() && is_topic_belong_to_action(topic_name, root_type)) {
@@ -486,6 +620,8 @@ rosbag2_storage::MessageDefinition LocalMessageDefinitionSource::get_full_text_e
       format = Format::UNKNOWN;
     }
   }
+
+end:
   rosbag2_storage::MessageDefinition out;
   switch (format) {
     case Format::UNKNOWN:

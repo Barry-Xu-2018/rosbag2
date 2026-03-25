@@ -110,6 +110,8 @@ private:
     MessageSpec(
       Format format, std::string text, const std::string & package_context,
       const std::string & namespace_hint);
+    MessageSpec(
+      Format format, std::string text, const std::set<std::string> & dependencies);
     const std::set<std::string> dependencies;
     const std::string text;
     Format format{Format::UNKNOWN};
