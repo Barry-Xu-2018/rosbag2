@@ -14,7 +14,9 @@
 
 #include <optional>
 #include <ostream>
+#include <regex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +30,7 @@ using rosbag2_cpp::LocalMessageDefinitionSource;
 using rosbag2_cpp::parse_definition_dependencies;
 using ::testing::ElementsAre;
 using ::testing::HasSubstr;
+using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
 
 namespace
@@ -83,6 +86,53 @@ std::optional<std::string> section_body(const std::string & text, const std::str
     }
   }
   return std::nullopt;
+}
+
+/// Complex field types of a ros2msg definition which can't be resolved to exactly one of its
+/// sections, following the rules of Foxglove's ros2msg parser (@foxglove/rosmsg): a type without
+/// package name is resolved relative to the namespace of the section it is used in, or to any
+/// section with that type name if used in the top-level definition.
+std::vector<std::string> unresolvable_field_types(const std::string & text)
+{
+  static const std::regex field_regex{
+    R"(^\s*([a-zA-Z][a-zA-Z0-9_/]*)(?:<=[0-9]+)?(?:\[[^\]]*\])?\s+[a-zA-Z])"};
+  static const std::set<std::string> builtin_types{
+    "bool", "byte", "char", "float32", "float64", "int8", "uint8", "int16", "uint16", "int32",
+    "uint32", "int64", "uint64", "string", "wstring"};
+  const auto sections = split_sections(text);
+  std::vector<std::string> type_names;
+  for (const auto & section : sections) {
+    type_names.push_back(section.first.rfind("MSG: ", 0) == 0 ? section.first.substr(5) : "");
+  }
+  std::vector<std::string> unresolvable;
+  for (size_t i = 0; i < sections.size(); ++i) {
+    const auto ns_end = type_names[i].rfind('/');
+    const std::string ns = ns_end == std::string::npos ? "" : type_names[i].substr(0, ns_end);
+    std::istringstream stream(sections[i].second);
+    for (std::string line; std::getline(stream, line); ) {
+      std::smatch match;
+      if (!std::regex_search(line, match, field_regex) || builtin_types.count(match[1].str())) {
+        continue;
+      }
+      const std::string type = match[1].str();
+      size_t matches = 0;
+      for (const auto & type_name : type_names) {
+        if (type.find('/') != std::string::npos || !ns.empty()) {
+          const std::string full_type = type.find('/') !=
+            std::string::npos ? type : ns + "/" + type;
+          matches += type_name == full_type;
+        } else {
+          const std::string suffix = "/" + type;
+          matches += type_name.size() > suffix.size() &&
+            type_name.compare(type_name.size() - suffix.size(), suffix.size(), suffix) == 0;
+        }
+      }
+      if (matches != 1) {
+        unresolvable.push_back(type_names[i] + ": " + type);
+      }
+    }
+  }
+  return unresolvable;
 }
 }  // namespace
 
@@ -331,6 +381,84 @@ TEST(test_local_message_definition_source, can_find_generated_type_definitions_i
   }
 }
 
+TEST(test_local_message_definition_source, qualifies_bare_field_types_of_srv)
+{
+  // Types of the same package used without package name in the .srv file are qualified, since
+  // parsers resolve them relative to the namespace of the synthesized definition ("pkg/srv").
+  LocalMessageDefinitionSource source;
+  auto result = source.get_full_text_ext("rosbag2_test_msgdefs/srv/BareTypeSrvMsg_Event", "");
+  EXPECT_EQ(result.encoding, "ros2msg");
+  const std::string & text = result.encoded_message_definition;
+  EXPECT_THAT(
+    section_headers(text), ElementsAre(
+      "",
+      "MSG: rosbag2_test_msgdefs/srv/BareTypeSrvMsg_Request",
+      "MSG: rosbag2_test_msgdefs/BasicMsg",
+      "MSG: rosbag2_test_msgdefs/srv/BareTypeSrvMsg_Response",
+      "MSG: service_msgs/msg/ServiceEventInfo",
+      "MSG: builtin_interfaces/Time")) << text;
+  EXPECT_EQ(
+    section_body(text, "MSG: rosbag2_test_msgdefs/srv/BareTypeSrvMsg_Request"),
+    "# Types of the same package are used without package name\n"
+    "rosbag2_test_msgdefs/BasicMsg req\n"
+    "string<=8 label \"default\"\n");
+  EXPECT_EQ(
+    section_body(text, "MSG: rosbag2_test_msgdefs/srv/BareTypeSrvMsg_Response"),
+    "rosbag2_test_msgdefs/BasicMsg[] resp\n");
+  EXPECT_THAT(unresolvable_field_types(text), IsEmpty()) << text;
+}
+
+TEST(test_local_message_definition_source, qualifies_bare_field_types_of_action)
+{
+  const std::string action_type = "rosbag2_test_msgdefs/action/BareTypeActionMsg";
+  LocalMessageDefinitionSource source;
+  auto result = source.get_full_text_ext(action_type + "_SendGoal_Event", "");
+  EXPECT_EQ(result.encoding, "ros2msg");
+  EXPECT_EQ(
+    section_body(result.encoded_message_definition, "MSG: " + action_type + "_Goal"),
+    "# Types of the same package are used without package name\n"
+    "rosbag2_test_msgdefs/BasicMsg goal\n");
+  EXPECT_THAT(unresolvable_field_types(result.encoded_message_definition), IsEmpty())
+    << result.encoded_message_definition;
+
+  result = source.get_full_text_ext(action_type + "_GetResult_Event", "");
+  EXPECT_EQ(result.encoding, "ros2msg");
+  EXPECT_EQ(
+    section_body(result.encoded_message_definition, "MSG: " + action_type + "_Result"),
+    "rosbag2_test_msgdefs/BasicMsg[<=2] result\n");
+  EXPECT_THAT(unresolvable_field_types(result.encoded_message_definition), IsEmpty())
+    << result.encoded_message_definition;
+
+  result = source.get_full_text_ext(action_type + "_FeedbackMessage", "");
+  EXPECT_EQ(result.encoding, "ros2msg");
+  EXPECT_EQ(
+    section_body(result.encoded_message_definition, "MSG: " + action_type + "_Feedback"),
+    "rosbag2_test_msgdefs/BasicMsg feedback\n");
+  EXPECT_THAT(unresolvable_field_types(result.encoded_message_definition), IsEmpty())
+    << result.encoded_message_definition;
+}
+
+TEST(test_local_message_definition_source, introspection_definitions_are_resolvable)
+{
+  // Every complex field type of the stored definitions must refer to exactly one definition.
+  for (const std::string type : {
+    "rosbag2_test_msgdefs/srv/BasicSrv_Event",
+    "rosbag2_test_msgdefs/srv/ComplexSrvMsg_Event",
+    "rosbag2_test_msgdefs/action/ComplexActionMsg_SendGoal_Event",
+    "rosbag2_test_msgdefs/action/ComplexActionMsg_GetResult_Event",
+    "rosbag2_test_msgdefs/action/ComplexActionMsg_FeedbackMessage",
+    "action_msgs/srv/CancelGoal_Event",
+    "action_msgs/msg/GoalStatusArray"})
+  {
+    SCOPED_TRACE(type);
+    LocalMessageDefinitionSource source;
+    auto result = source.get_full_text_ext(type, "");
+    EXPECT_EQ(result.encoding, "ros2msg");
+    EXPECT_THAT(unresolvable_field_types(result.encoded_message_definition), IsEmpty())
+      << result.encoded_message_definition;
+  }
+}
+
 TEST(test_local_message_definition_source, can_find_srv_deps_in_msg)
 {
   // Plain service type: the content of the .srv file followed by its dependencies
@@ -500,10 +628,10 @@ TEST(test_local_message_definition_source, can_find_action_cancel_goal_and_statu
       "action_msgs/srv/CancelGoal_Response[<=1] response\n");
     EXPECT_THAT(
       section_body(text, "MSG: action_msgs/srv/CancelGoal_Request").value_or(""),
-      HasSubstr("GoalInfo goal_info\n"));
+      HasSubstr("\naction_msgs/GoalInfo goal_info\n"));
     EXPECT_THAT(
       section_body(text, "MSG: action_msgs/srv/CancelGoal_Response").value_or(""),
-      HasSubstr("GoalInfo[] goals_canceling\n"));
+      HasSubstr("\naction_msgs/GoalInfo[] goals_canceling\n"));
 
     result = source.get_full_text_ext(
       "action_msgs/msg/GoalStatusArray", action_name + "/_action/status");

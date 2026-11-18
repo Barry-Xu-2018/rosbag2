@@ -1,0 +1,6 @@
+# Types of the same package are used without package name
+BasicMsg goal
+---
+BasicMsg[<=2] result
+---
+BasicMsg feedback

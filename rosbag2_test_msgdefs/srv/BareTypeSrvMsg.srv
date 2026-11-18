@@ -1,0 +1,5 @@
+# Types of the same package are used without package name
+BasicMsg req
+string<=8 label "default"
+---
+BasicMsg[] resp

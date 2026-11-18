@@ -19,10 +19,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/BasicSrv.srv"
   "srv/ComplexSrvMsg.srv"
   "srv/ComplexSrvIdl.srv"
+  "srv/BareTypeSrvMsg.srv"
   "action/BasicAction.action"
   "nested_sub_dir/action/BasicMsg.action"
   "action/ComplexActionMsg.action"
   "action/ComplexActionIdl.action"
+  "action/BareTypeActionMsg.action"
 )
 
 ament_package()
